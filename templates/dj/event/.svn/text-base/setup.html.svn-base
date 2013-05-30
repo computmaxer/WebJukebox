@@ -1,0 +1,94 @@
+{% extends 'dj/base.html' %}
+{% load ttags %}
+
+{% block page_title %}Web Jukebox - Event Settings{% endblock %}
+{% block style %}
+<style>
+form.event-setup label.control-label{
+    width: 110px;
+}
+form.event-setup .controls{
+    margin-left: 110px;
+}
+#library-setup-table tr:hover{
+    cursor: pointer;
+}
+</style>
+{% endblock %}
+
+{% block event-content %}
+<div class="page-header">
+    <h2>Event Settings</h2>
+</div>
+<div class="container-fluid">
+    <div class="row-fluid">
+        <div class="span6">
+            <div class="">
+                <div style="margin: 0 auto;width:400px;">
+                    <form class="form-horizontal event-setup" method="POST">
+                        {% render_form event-setup-form %}
+                        <div class="controls">
+                            <input type="submit" class="btn btn-primary" value="Submit" />
+                        </div>
+                    </form>
+                </div>
+            </div>
+        </div>
+        <div class="span6" style="margin-top: -70px;">
+            <h3>Included Libraries</h3>
+            <table class="table table-bordered table-hover" id="library-setup-table">
+                <thead>
+                <tr>
+                    <th width="60px">Included</th>
+                    <th>Name</th>
+                    <th>Song Count</th>
+                </tr>
+                </thead>
+                <tbody>
+                {% for library in user_libraries %}
+                    {% if library.str_id in event_libraries %}
+                        <tr class="success include-library" id="{{ library.id }}-id">
+                            <td style="text-align: center;"><i class="icon-ok"></i></td>
+                            <td>{{ library.name }}</td>
+                            <td>{{ library.song_count }}</td>
+                        </tr>
+                    {% else %}
+                        <tr class="include-library" id="{{ library.id }}-id">
+                            <td></td>
+                            <td>{{ library.name }}</td>
+                            <td>{{ library.song_count }}</td>
+                        </tr>
+                    {% endif %}
+                {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>
+<script type="text/javascript">
+$(document).ready(function(){
+    $(".include-library").click(function(){
+        var that = $(this);
+        var library_id = that.attr('id').substring(0, that.attr('id').length - 3);
+        var url = '/dj/events/{{ event.id }}/library/'+library_id+'/';
+        var action = 'add';
+        if(that.hasClass('success')) action = 'remove';
+        $.getJSON(url,
+                  {'action':action},
+                  function(data){
+                      if(data.result == 'added'){
+                          that.addClass('success');
+                          that.find('td').first().html('<i class="icon-ok"></i>');
+                      }
+                      else if(data.result == 'removed'){
+                          that.removeClass('success');
+                          that.find('td').first().html('');
+                      }
+                  }
+        );
+    });
+});
+</script>
+
+
+{% endblock %}

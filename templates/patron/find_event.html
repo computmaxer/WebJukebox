@@ -1,0 +1,40 @@
+{% extends 'base.html' %}
+{% load ttags %}
+
+{% block page_title %}Web Jukebox - Find Event{% endblock %}
+
+{% block content %}
+
+<div class="container-fluid">
+    <div class="row-fluid">
+        <div class="span12">
+            <h1 style="display: inline;">Find an Event</h1>
+            <form method="POST" style="float:right;">{% render_form form %}</form>
+            <table class="table table-bordered table-striped table-hover" id="event-table" style="margin-top:5px;">
+                <thead class="header">
+                <tr>
+                    <th>Name</th>
+                    <th>Date & Time</th>
+                    <th>Location</th>
+                    <th>Zip Code</th>
+                </tr>
+                </thead>
+
+                <tbody>
+                {% for event in nearby_events %}
+                    <tr onClick="javascript:document.location='{% url patron-event-requests event.id %}'">
+                        <td>{{ event.name }}</td>
+                        <td>{{ event.date_time }}</td>
+                        <td>{{ event.location }}</td>
+                        <td>{{ event.zipcode }}</td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,100 @@
+{% extends 'base.html' %}
+{% load ttags %}
+
+{% block page_title %}Web Jukebox - Events{% endblock %}
+
+{% block content %}
+
+
+<div class="row" style="margin-top: 10px">
+    <div class="span12">
+        <h1>Select an Event</h1>
+        <a id="create-event-button" href="#create-event-modal" class="btn btn-primary pull-left" style="display: inline;margin-top:5px;" role="button" data-toggle="modal">Create Event</a>
+        <table class="table table-bordered table-striped table-hover" id="event-table" style="margin-top:5px;">
+            <thead class="header">
+                <tr>
+                    <th>Name</th>
+                    <th>Date & Time</th>
+                    <th>Location</th>
+                    <th>Zip Code</th>
+                </tr>
+            </thead>
+
+            <tbody>
+            {% for event in user_events %}
+                <tr onClick="javascript:document.location='{% url dj-event-requests event.id %}'" class="link-row">
+                    <td>{{ event.name }}</td>
+                    <td>{{ event.date_time }}</td>
+                    <td>{{ event.location }}</td>
+                    <td>{{ event.zipcode }}</td>
+                </tr>
+            {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+
+<div class="modal" id="create-event-modal" tabindex="-1" role="dialog" aria-labelledby="create-event-modal" aria-hidden="true" style="display: none;">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3 id="myModalLabel">Create Event</h3>
+    </div>
+    <form class="form-horizontal" action='' method="POST" style="margin-bottom:0px;">
+        <div class="modal-body">
+            <div>
+                {% csrf_token %}
+                {% render_form form %}
+            </div>
+        </div>
+        <div class="modal-footer">
+            <input type="submit" class="btn btn-primary" value="Submit" />
+            <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+        </div>
+    </form>
+</div>
+
+
+<!--script for datatable -->
+<script>
+    $(document).ready(function() {
+
+        $('#event-table').dataTable( {
+            "sDom": "<'datatable-head'<'datatable-filter'f>>t<'datatable-foot'<'datatable-length'l><'datatable-pagination'pi>>",
+            "bFilter": true ,
+            "bPaginate": true,
+            "bInfo": true,
+            "bStateSave":true,
+            "sPaginationType": "bootstrap",
+            "oLanguage": {
+                "sInfo": "Showing _START_ to _END_ of _TOTAL_ events",
+                "sLengthMenu": "Show _MENU_ events",
+                "sInfoEmpty": "Showing 0 events",
+                "sInfoFiltered": "(filtered from _MAX_ total events)"
+            },
+            "fnDrawCallback": function() {
+                var pageCount = Math.ceil((this.fnSettings().fnRecordsDisplay()) / this.fnSettings()._iDisplayLength);
+                var recordCount = this.fnSettings().fnRecordsDisplay();
+                if(recordCount > 10){
+                    $('.dataTables_length').css("display", "block");
+                }
+                else{
+                    $('.dataTables_length').css("display", "none");
+                }
+                if (pageCount > 1)  {
+                    $('.dataTables_paginate').css("display", "block");
+
+                } else {
+                    $('.dataTables_paginate').css("display", "none");
+                }
+            }
+        } );
+        {% if create_open %}
+        $('#create-event-button').trigger('click');
+        {% endif %}
+    } );
+
+</script>
+{% endblock %}

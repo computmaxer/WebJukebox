@@ -1,0 +1,83 @@
+{% extends 'base.html' %}
+{% load ttags %}
+
+{% block page_title %}Web Jukebox - Account Settings{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="span8 offset2">
+        <h1>Account Settings</h1>
+        <div class="well">
+            <table class="table table-bordered table-striped">
+                <tbody>
+                    <tr>
+                        <td>Username:</td>
+                        <td>{{ user.username }}</td>
+                    </tr>
+                    <tr>
+                        <td>Email:</td>
+                        <td>{{ user.email }}</td>
+                    </tr>
+                    <tr>
+                        <td>First Name:</td>
+                        <td>{{user.first_name}}</td>
+                    </tr>
+                    <tr>
+                        <td>Last Name:</td>
+                        <td>{{user.last_name}}</td>
+                    </tr>
+                    <tr>
+                        <td>Street Address:</td>
+                        <td>{{user.profile.streetaddress}}</td>
+                    </tr>
+                    <tr>
+                        <td>City:</td>
+                        <td>{{user.profile.city}}</td>
+                    </tr>
+                    <tr>
+                        <td>Zipcode:</td>
+                        <td>{{user.profile.zipcode}}</td>
+                    </tr>
+                </tbody>
+            </table>
+            <div style="text-align: right;">
+                <a id="edit-profile-button" href="#edit-profile-modal"
+                   class="btn btn-primary"
+                   style="margin-bottom: 5px;" role="button"
+                   data-toggle="modal">Edit Account</a>
+            </div>
+        </div>
+    </div>
+</div>
+
+<div class="modal" id="edit-profile-modal" tabindex="-1" role="dialog"
+	aria-labelledby="edit-profile-modal" aria-hidden="true"
+	style="display: none;">
+	<div class="modal-header">
+		<button type="button" class="close" data-dismiss="modal"
+			aria-hidden="true">×</button>
+		<h3 id="myModalLabel">Edit Account</h3>
+	</div>
+	<form class="form-horizontal" action='' method="POST"
+		style="margin-bottom: 0px;">
+		<div class="modal-body">
+			<div>{% csrf_token %} {% render_form form %}</div>
+		</div>
+		<div class="modal-footer">
+			<input type="submit" class="btn btn-primary" value="Submit" />
+			<button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+		</div>
+	</form>
+</div>
+
+<script>
+$(document).ready(function(){
+	{% if dialog_open %}
+	$('#edit-profile-button').trigger('click');
+	{% endif %}
+});
+</script>
+
+
+
+{% endblock %}

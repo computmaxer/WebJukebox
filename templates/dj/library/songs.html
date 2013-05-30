@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% load ttags %}
+
+{% block page_title %}Web Jukebox - Library Song List{% endblock %}
+
+{% block content %}
+<div class="row" style="margin-top: 10px;">
+    <h1>Songs in "{{ library.name }}"</h1>
+    <table class="table table-bordered table-striped table-hover" id="song-table">
+        <thead class="header">
+            <tr>
+                <th>Title</th>
+                <th>Artist</th>
+                <th>Album</th>
+                <th width="65px">Length</th>
+            </tr>
+        </thead>
+
+        <tbody>
+        {% for song in library.get_songs %}
+            <tr>
+                <td>{{ song.title }}</td>
+                <td>{{ song.artist }}</td>
+                <td>{{ song.album }}</td>
+                <td>{{ song.get_time }}</td>
+            </tr>
+
+        {% empty %}
+            <tr>
+                <td colspan="4" style="text-align: center;">There aren't any songs in this library!</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+
+<script type="text/javascript">
+$(document).ready(function(){
+    $('#song-table').dataTable( {
+       "sDom": "<'datatable-head'<'datatable-filter'f>>t<'datatable-foot'<'datatable-length'l><'datatable-pagination'pi>>",
+       "bFilter": true ,
+       "bPaginate": true,
+       "bInfo": true,
+       "bStateSave":true,
+       "sPaginationType": "bootstrap",
+       "oLanguage": {
+           "sInfo": "Showing _START_ to _END_ of _TOTAL_ songs",
+           "sLengthMenu": "Show _MENU_ songs",
+           "sInfoEmpty": "Showing 0 songs",
+           "sInfoFiltered": "(filtered from _MAX_ total songs)"
+       },
+       "fnDrawCallback": function() {
+           var pageCount = Math.ceil((this.fnSettings().fnRecordsDisplay()) / this.fnSettings()._iDisplayLength);
+           var recordCount = this.fnSettings().fnRecordsDisplay();
+           if(recordCount > 10){
+               $('.dataTables_length').css("display", "block");
+           }
+           else{
+               $('.dataTables_length').css("display", "none");
+           }
+           if (pageCount > 1)  {
+               $('.dataTables_paginate').css("display", "block");
+
+           } else {
+               $('.dataTables_paginate').css("display", "none");
+           }
+       }
+    });
+});
+</script>
+{% endblock %}

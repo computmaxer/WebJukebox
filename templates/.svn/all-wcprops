@@ -1,0 +1,23 @@
+K 25
+svn:wc:ra_dav:version-url
+V 50
+/coms309/E2/!svn/ver/85/trunk/webjukebox/templates
+END
+account_settings.html
+K 25
+svn:wc:ra_dav:version-url
+V 72
+/coms309/E2/!svn/ver/83/trunk/webjukebox/templates/account_settings.html
+END
+base.html
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/coms309/E2/!svn/ver/90/trunk/webjukebox/templates/base.html
+END
+home.html
+K 25
+svn:wc:ra_dav:version-url
+V 60
+/coms309/E2/!svn/ver/88/trunk/webjukebox/templates/home.html
+END

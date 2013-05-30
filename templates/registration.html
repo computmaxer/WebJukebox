@@ -1,0 +1,23 @@
+{% extends 'base.html' %}
+{% load ttags %}
+{% block page_title %}Web Jukebox -
+Registration{% endblock %} {% block content %}
+<div class="container-fluid">
+	<div class="row-fluid">
+		<div class="span10 offset1">
+			<h1>Register an Account</h1>
+
+			<form class="form-horizontal" action='' method="POST" style="margin-bottom: 0px;">
+				<div>
+					{% csrf_token %} 
+					{{form.as_p}}
+				</div>
+				<input type="submit" class="btn btn-primary" value="Submit" />
+			</form>
+
+
+		</div>
+
+	</div>
+</div>
+{% endblock %}

@@ -1,0 +1,69 @@
+{% extends 'base.html' %}
+
+{% block page_title %}Web Jukebox - Home{% endblock %}
+{% block style %}
+<style>
+body{
+    padding-top: 0;
+}
+#home-splash{
+    background-image: url('/static/img/desk.png');
+}
+
+</style>
+
+{% endblock %}
+
+{% block jumbo %}
+    <div id="jumbohead" class="jumbotron subhead" style="height:500px;margin-top:40px;">
+        <div class="jumbohead-image">
+            <div class="header-text" style="padding-top:50px;">
+                <h1>You be the DJ</h1>
+                <br>
+                <p style="">WebJukebox - Making song requests easy.</p>
+                {{ is_dj }}
+            </div>
+        </div>
+    </div>
+{% endblock %}
+
+{% block content %}
+
+{#<div id="home-splash" class="hero-unit">#}
+{#    <img class="logo" src="/static/img/music-icon.png" />#}
+{#    <div class="header-text">#}
+{#        <h1>Web Jukebox</h1>#}
+{#        <br>#}
+{#        <p style="">Making song requests easy.</p>#}
+{#        {{ is_dj }}#}
+{#    </div>#}
+{#</div>#}
+<br>
+<div class="row" id="home-main-row">
+    <div class="span5 offset1">
+        <div class="well">
+            <h1>Find an Event</h1>
+            Are you a guest at an event using WebJukebox?  Then this is where you need to be!  Type in your zipcode to find events near you.
+            <form action="{% url find-event %}" method="POST">
+                {% csrf_token %}
+                <div style="margin:auto 0;text-align: center;">
+                    <label for="id_zipcode">
+                        <i class="icon-search" style="font-size: 26px; line-height: 0.9;vertical-align: middle;"></i>
+                        <input id="id_zipcode" type="text" name="zipcode" style="width:120px;margin-top:9px;" placeholder="Enter your zipcode" />
+                        <input type="submit" class="btn btn-primary" value="Go" style="" />
+                    </label>
+                </div>
+            </form>
+        </div>
+    </div>
+
+    <div class="span5">
+        <div class="well">
+            <h1>DJ an Event</h1>
+            Are you a DJ looking for a song request handling system?  Then you are in the right place!  Click the button below to begin!
+            <div style="margin:10px auto;text-align: center;"><a class="btn btn-primary" href="{% url select-event %}?create=true">Create My Event</a></div>
+        </div>
+    </div>
+</div>
+
+{% endblock %}

@@ -1,0 +1,105 @@
+<!DOCTYPE html>
+
+<html>
+    <head>
+        <title>{% block page_title %}Web Jukebox{% endblock %}</title>
+
+        <link rel="author" href="humans.txt" />
+
+        <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.css" />
+        <link rel="stylesheet" type="text/css" href="/static/css/bootstrap.datatable.css" />
+        <link rel="stylesheet" type="text/css" href="/static/css/datepicker.css" />
+        <link rel="stylesheet" type="text/css" href="/static/css/styles.css" />
+        <link rel="stylesheet" type="text/css" href="/static/css/font-awesome.css" />
+
+        <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+        <script type="text/javascript" src="/static/js/bootstrap.js"></script>
+        <script type="text/javascript" src="/static/js/bootstrap-datepicker.js"></script>
+        <script type="text/javascript" src="/static/js/jquery.datatable.js"></script>
+        <script type="text/javascript" src="/static/js/bootstrap.datatable.js"></script>
+        <script type="text/javascript" src="/static/js/jquery.qrcode.min.js"></script>
+        {% block style %}{% endblock %}
+        {% block script %}{% endblock %}
+    </head>
+
+    <body>
+
+        <div class="navbar navbar-fixed-top navbar-inverse">
+            <div class="navbar-inner">
+                <div class="container">
+                    <!--These are the black navbar links -->
+                    <ul class="nav">
+                        <li><a href="/">Home</a></li>
+                        {% if user.is_authenticated %}
+                        <li><a href="{% url select-event %}">Events</a></li>
+                        <li><a href="{% url view-libraries %}">Libraries</a></li>
+                        {% endif %}
+                    </ul>
+
+                    {% if user.is_authenticated %}
+                    <ul class="nav pull-right">
+                        <li class="dropdown">
+                            <a href="#" class="dropdown-toggle" data-toggle="dropdown">
+                                {{ user.profile.get_display_name }}
+                                <b class="caret"></b>
+                            </a>
+                            <ul class="dropdown-menu">
+                                <li>
+                                    <a href="{% url account-settings %}">Account Settings</a>
+                                </li>
+                                <li class="divider"></li>
+                                <li>
+                                    <a href="{% url site-logout %}">Logout</a>
+                                </li>
+                            </ul>
+                        </li>
+                    </ul>
+
+                    {% else %}
+                    <ul class="nav pull-right">
+                    	<li><a href="{% url account-registration %}">Register</a></li>
+                        <li><a href="{% url site-login %}">Login</a></li>
+                    </ul>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+
+        {% block jumbo %}
+        {% endblock %}
+
+        <div id="main-content" class="container">
+            <!-- This is the block that main page content goes in.  You put stuff in here when you extend this template -->
+            {% block content %}{% endblock %}
+        </div>
+
+        <footer class="footer">
+            <div class="container">
+                <p class="pull-right"><a href="#">Back to top</a></p>
+                <p>&copy; 309 Group E2</p>
+                <p>Developed by Max Peterson, Zach Heilman, Tom Moser</p>
+                <p><a href="mailto:maxpete@iastate.edu">Contact Us</a></p>
+
+            </div>
+        </footer>
+
+        <script>
+            $(document).ready(function(){
+                //This code places the footer at the bottom of the page, even if there is not enough
+                //content on the page to push it down there.  It sets the min-height on the
+                //main-content div.  This gets automatically recalculated whenever the window is resized.
+                $(window).resize(function(){
+                    var new_height = $(window).height() - 171 - $('.footer').height();
+                    //The 'jumbotron' is not in main-content so we have to account for that separately.
+                    if($(".jumbotron").length > 0){
+                        new_height = new_height - $('.jumbotron').height() + 20; //150 is for top and bottom padding.
+                    }
+                    if(new_height < 300) new_height = 300;
+                    $("#main-content").css('min-height', new_height);
+                });
+                //Sets the min-height on initial page load.
+                $(window).trigger('resize');
+            });
+        </script>
+    </body>
+</html>

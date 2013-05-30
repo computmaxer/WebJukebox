@@ -1,0 +1,118 @@
+{% extends 'dj/base.html' %}
+{% load ttags %}
+
+{% block page_title %}Web Jukebox - Event Statistics{% endblock %}
+
+{% block event-content %}
+<div class="page-header">
+    <h2>Statistics</h2>
+</div>
+<div>
+    <h3 style="display: inline">Most Popular Artists</h3>
+    <table class="table table-bordered table-striped table-hover" id="artist-statistics-table">
+        <thead class="header">
+        <tr>
+            <th>Artist</th>
+            <th># Requests</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        {% for artist,count in artist_stats.items %}
+            <tr>
+                <td>{{ artist }}</td>
+                <td>{{ count }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<div style="margin-top: 70px;">
+    <h3 style="display: inline">All Song Requests</h3>
+    <table class="table table-bordered table-striped table-hover" id="event-statistics-table">
+        <thead class="header">
+        <tr>
+            <th>Title</th>
+            <th>Artist</th>
+            <th># Requests</th>
+            <th>Last Requested</th>
+        </tr>
+        </thead>
+
+        <tbody>
+        {% for request in all_requests %}
+            <tr id="{{ request.id }}-row">
+                <td>{{ request.song.title }}</td>
+                <td>{{ request.song.artist }}</td>
+                <td>{{ request.count }}</td>
+                <td>{{ request.last_requested }}</td>
+            </tr>
+        {% endfor %}
+        </tbody>
+    </table>
+</div>
+<script type="text/javascript">
+$(document).ready(function(){
+    $('#event-statistics-table').dataTable( {
+         "sDom": "<'datatable-head'<'datatable-filter'f>>t<'datatable-foot'<'datatable-length'l><'datatable-pagination'pi>>",
+         "bFilter": true ,
+         "bPaginate": true,
+         "bInfo": true,
+         "bStateSave":true,
+         "sPaginationType": "bootstrap",
+         "oLanguage": {
+             "sInfo": "Showing _START_ to _END_ of _TOTAL_ requests",
+             "sLengthMenu": "Show _MENU_ requests",
+             "sInfoEmpty": "Showing 0 requests",
+             "sInfoFiltered": "(filtered from _MAX_ total requests)"
+         },
+         "fnDrawCallback": function() {
+             var pageCount = Math.ceil((this.fnSettings().fnRecordsDisplay()) / this.fnSettings()._iDisplayLength);
+             var recordCount = this.fnSettings().fnRecordsDisplay();
+             if(recordCount > 10){
+                 $('.dataTables_length').css("display", "block");
+             }
+             else{
+                 $('.dataTables_length').css("display", "none");
+             }
+             if (pageCount > 1)  {
+                 $('.dataTables_paginate').css("display", "block");
+
+             } else {
+                 $('.dataTables_paginate').css("display", "none");
+             }
+         }
+    });
+    $('#artist-statistics-table').dataTable( {
+         "sDom": "<'datatable-head'<'datatable-filter'f>>t<'datatable-foot'<'datatable-length'l><'datatable-pagination'pi>>",
+         "bFilter": true ,
+         "bPaginate": true,
+         "bInfo": true,
+         "bStateSave":true,
+         "sPaginationType": "bootstrap",
+         "oLanguage": {
+             "sInfo": "Showing _START_ to _END_ of _TOTAL_ requests",
+             "sLengthMenu": "Show _MENU_ requests",
+             "sInfoEmpty": "Showing 0 requests",
+             "sInfoFiltered": "(filtered from _MAX_ total requests)"
+         },
+         "fnDrawCallback": function() {
+             var pageCount = Math.ceil((this.fnSettings().fnRecordsDisplay()) / this.fnSettings()._iDisplayLength);
+             var recordCount = this.fnSettings().fnRecordsDisplay();
+             if(recordCount > 10){
+                 $('.dataTables_length').css("display", "block");
+             }
+             else{
+                 $('.dataTables_length').css("display", "none");
+             }
+             if (pageCount > 1)  {
+                 $('.dataTables_paginate').css("display", "block");
+
+             } else {
+                 $('.dataTables_paginate').css("display", "none");
+             }
+         }
+    });
+});
+</script>
+{% endblock %}

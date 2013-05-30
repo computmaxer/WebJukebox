@@ -1,0 +1,31 @@
+<!DOCTYPE html>
+
+<html>
+<head>
+<title>Web Jukebox</title>
+<script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.1/jquery.min.js"></script>
+<script type="text/javascript" src="/static/js/jquery.qrcode.min.js"></script>
+</head>
+<body>
+<div style="text-align: center;">
+<h1 style="font-size: 60px; font-family: Arial;">Scan this code to use your phone to request songs!</h1>
+<div id="qrcode">
+<script>
+function generateQRcode(){
+	$('#qrcode').html('');
+	jQuery('#qrcode').qrcode({
+		render	: "canvas",
+		text	: "{{ full_url }}",
+		width	: (window.innerHeight * 0.8) - 120,
+		height	: (window.innerHeight * 0.8) - 120
+	});
+}
+
+generateQRcode();
+
+$(window).resize(generateQRcode);
+</script>
+</div>
+</div>
+</body>
+</html>

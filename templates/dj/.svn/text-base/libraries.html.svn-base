@@ -1,0 +1,163 @@
+{% extends 'base.html' %}
+{% load ttags %}
+
+{% block page_title %}Web Jukebox - Libraries{% endblock %}
+
+{% block content %}
+
+<div class="row" style="margin-top: 10px">
+    <div class="span12">
+        <h1>Your Libraries</h1>
+        <a id="add-library-button" href="#add-library-modal" class="btn btn-primary pull-left" style="display: inline;margin-top:5px;" role="button" data-toggle="modal">Add New Library</a>
+        <table class="table table-bordered table-striped table-hover" id="library-table" style="margin-top:5px;">
+            <thead class="header">
+                <tr>
+                    <th>Name</th>
+                    <th>Song List</th>
+                    <th width="80px">Actions</th>
+                </tr>
+            </thead>
+
+                <tbody>
+                {% for library in user_libraries %}
+                    <tr>
+                        <td>{{ library.name }}</td>
+                        <td>
+                            <a href="{% url view-songs-in-library library.id %}">{{ library.song_count }} Songs</a>
+                        </td>
+                        <td>
+                            <div class="btn-group">
+                                <a class="btn" href="#edit-library-modal" role="button" data-toggle="modal" data-library_id="{{ library.id }}" data-library_name="{{ library.name }}"><i class="icon-pencil"></i></a>
+                                <a class="btn btn-danger" href="#delete-library-modal" role="button" data-toggle="modal" data-library_id="{{ library.id }}" data-library_name="{{ library.name }}"><i class="icon-trash"></i></a>
+                            </div>
+                        </td>
+                    </tr>
+                {% endfor %}
+                </tbody>
+            </table>
+
+        </div>
+
+    </div>
+</div>
+
+<div class="modal" id="add-library-modal" tabindex="-1" role="dialog" aria-labelledby="add-library-modal" aria-hidden="true" style="display: none;">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3 id="myModalLabel">Add New Library</h3>
+    </div>
+    <form class="form-horizontal" action='' method="POST" enctype="multipart/form-data" style="margin-bottom:0px;">
+        <div class="modal-body">
+            <div>
+                {% csrf_token %}
+                {% render_form add_form %}
+            </div>
+        </div>
+        <div class="modal-footer">
+        	<input type="hidden" name="action" value="create" />
+            <input type="submit" class="btn btn-primary" value="Submit" />
+            <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+        </div>
+    </form>
+</div>
+
+<div class="modal" id="edit-library-modal" tabindex="-1" role="dialog" aria-labelledby="edit-library-modal" aria-hidden="true" style="display: none;">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">×</button>
+        <h3 id="myModalLabel2">Edit Library</h3>
+    </div>
+    <form class="form-horizontal" action='' method="POST" enctype="multipart/form-data" style="margin-bottom:0px;">
+        <div class="modal-body">
+            <div>
+                {% csrf_token %}
+                {% render_form edit_form %}
+            </div>
+        </div>
+        <div class="modal-footer">
+        	<input type="hidden" name="action" value="edit" />
+            <input type="submit" class="btn btn-primary" value="Submit" />
+            <button class="btn" data-dismiss="modal" aria-hidden="true">Close</button>
+        </div>
+    </form>
+</div>
+
+<div class="modal" id="delete-library-modal" tabindex="-1" role="dialog" aria-labelledby="delete-library-modal" aria-hidden="true" style="display: none;">
+    <div class="modal-header">
+        <button type="button" class="close" data-dismiss="modal" aria-hidden="true">x</button>
+        <h3 id="myModalLabel3">Delete Library</h3>
+    </div>
+    <form class="form-horizontal" action="/dj/libraries/delete/" method="POST" enctype="multipart/form-data" style="margin-bottom:0px;">
+        {% csrf_token %}
+        <div class="modal-body">
+            <p><strong>WARNING:</strong></p>
+            <p id="deleting-lib-warning"></p>
+            <p>This action cannot be undone.</p>
+            <input id="library-to-delete" type="hidden" name="library_id" value="" />
+        </div>
+            <div class="modal-footer">
+            <input type="hidden" name="action" value="edit" />
+            <input type="submit" class="btn btn-danger" value="Delete Library" />
+            <button class="btn" data-dismiss="modal" aria-hidden="true">Cancel</button>
+        </div>
+    </form>
+</div>
+
+<!--script for datatable -->
+<script>
+    $(document).ready(function() {
+        $('#library-table').dataTable( {
+           "sDom": "<'datatable-head'<'datatable-filter'f>>t<'datatable-foot'<'datatable-length'l><'datatable-pagination'pi>>",
+           "bFilter": true ,
+           "bPaginate": true,
+           "bInfo": true,
+           "bStateSave":true,
+           "sPaginationType": "bootstrap",
+           "oLanguage": {
+               "sInfo": "Showing _START_ to _END_ of _TOTAL_ libraries",
+               "sLengthMenu": "Show _MENU_ libraries",
+               "sInfoEmpty": "Showing 0 libraries",
+               "sInfoFiltered": "(filtered from _MAX_ total libraries)"
+           },
+           "aoColumns": [
+               null,
+               null,
+               { "bSortable": false }
+           ],
+           "fnDrawCallback": function() {
+               var pageCount = Math.ceil((this.fnSettings().fnRecordsDisplay()) / this.fnSettings()._iDisplayLength);
+               var recordCount = this.fnSettings().fnRecordsDisplay();
+               if(recordCount > 10){
+                   $('.dataTables_length').css("display", "block");
+               }
+               else{
+                   $('.dataTables_length').css("display", "none");
+               }
+               if (pageCount > 1)  {
+                   $('.dataTables_paginate').css("display", "block");
+
+               } else {
+                   $('.dataTables_paginate').css("display", "none");
+               }
+           }
+       } );
+        {% if create_open %}
+        $('#add-library-button').trigger('click');
+        {% endif %}
+
+        $('#delete-library-modal').on('show', function (event) {
+            var library_id = $(this).data('modal').options.library_id;
+            $(this).find('#library-to-delete').val(library_id);
+            var library_name = $(this).data('modal').options.library_name;
+            $(this).find('#deleting-lib-warning').html("You are about to delete " + library_name + ".");
+        });
+        
+        $('#edit-library-modal').on('show', function (event){
+            var library_id = $(this).data('modal').options.library_id;
+            $(this).find('#id_library').val(library_id);
+            var library_name = $(this).data('modal').options.library_name;
+            $(this).find('#id_name').val(library_name);
+        });
+        
+    });
+</script>
+{% endblock %}

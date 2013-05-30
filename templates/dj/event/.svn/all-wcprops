@@ -1,0 +1,35 @@
+K 25
+svn:wc:ra_dav:version-url
+V 59
+/coms309/E2/!svn/ver/85/trunk/webjukebox/templates/dj/event
+END
+requests.html
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/coms309/E2/!svn/ver/83/trunk/webjukebox/templates/dj/event/requests.html
+END
+statistics.html
+K 25
+svn:wc:ra_dav:version-url
+V 75
+/coms309/E2/!svn/ver/94/trunk/webjukebox/templates/dj/event/statistics.html
+END
+displays.html
+K 25
+svn:wc:ra_dav:version-url
+V 73
+/coms309/E2/!svn/ver/85/trunk/webjukebox/templates/dj/event/displays.html
+END
+qrcode.html
+K 25
+svn:wc:ra_dav:version-url
+V 71
+/coms309/E2/!svn/ver/85/trunk/webjukebox/templates/dj/event/qrcode.html
+END
+setup.html
+K 25
+svn:wc:ra_dav:version-url
+V 70
+/coms309/E2/!svn/ver/94/trunk/webjukebox/templates/dj/event/setup.html
+END

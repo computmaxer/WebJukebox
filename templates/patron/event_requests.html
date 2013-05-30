@@ -1,0 +1,127 @@
+{% extends 'base.html' %}
+{% load ttags %}
+
+{% block page_title %}Web Jukebox - Event Requests{% endblock %}
+{% block style %}
+<style>
+.song:hover{
+    cursor: pointer;
+}
+
+</style>
+
+{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="span12">
+        <h1>{{ event.name }}</h1>
+        <h3 class="pull-left">Songs</h3>
+        <table class="table table-bordered table-striped table-hover" id="request-table" style="margin-top:5px;">
+            <thead class="header">
+            <tr>
+                <th width="72px">Requested</th>
+                <th>Title</th>
+                <th>Artist</th>
+                <th>Album</th>
+                <th width="65px">Length</th>
+            </tr>
+            </thead>
+
+            <tbody>
+            {% for library in libraries %}
+                {% for song in library.get_songs %}
+                    {% if song.str_id in session_requests %}
+                    <tr class="song success" id="{{ song.id }}-id">
+                        <td style="text-align: center;"><i class="icon-ok"></i></td>
+                        <td>{{ song.title }}</td>
+                        <td>{{ song.artist }}</td>
+                        <td>{{ song.album }}</td>
+                        <td>{{ song.get_time }}</td>
+                    </tr>
+                    {% else %}
+                    <tr class="song" id="{{ song.id }}-id">
+                        <td style="text-align: center;"></td>
+                        <td>{{ song.title }}</td>
+                        <td>{{ song.artist }}</td>
+                        <td>{{ song.album }}</td>
+                        <td>{{ song.get_time }}</td>
+                    </tr>
+                    {% endif %}
+                {% endfor %}
+            {% endfor %}
+            </tbody>
+        </table>
+
+    </div>
+
+</div>
+
+<script>
+$(document).ready(function(){
+    $('#request-table').dataTable( {
+       "sDom": "<'datatable-head'<'datatable-filter'f>>t<'datatable-foot'<'datatable-length'l><'datatable-pagination'pi>>",
+       "bFilter": true ,
+       "bPaginate": true,
+       "bInfo": true,
+       "bStateSave":true,
+       "sPaginationType": "bootstrap",
+       "oLanguage": {
+           "sInfo": "Showing _START_ to _END_ of _TOTAL_ songs",
+           "sLengthMenu": "Show _MENU_ songs",
+           "sInfoEmpty": "Showing 0 songs",
+           "sInfoFiltered": "(filtered from _MAX_ total songs)"
+       },
+       "aoColumns": [
+           { "bSortable": false },
+           null,
+           null,
+           null,
+           null
+       ],
+       "fnDrawCallback": function() {
+           var pageCount = Math.ceil((this.fnSettings().fnRecordsDisplay()) / this.fnSettings()._iDisplayLength);
+           var recordCount = this.fnSettings().fnRecordsDisplay();
+           if(recordCount > 10){
+               $('.dataTables_length').css("display", "block");
+           }
+           else{
+               $('.dataTables_length').css("display", "none");
+           }
+           if (pageCount > 1)  {
+               $('.dataTables_paginate').css("display", "block");
+
+           } else {
+               $('.dataTables_paginate').css("display", "none");
+           }
+       }
+    });
+    $('.song').live('click',function(){
+        var that = $(this);
+        var url = '{% url patron-request-song event.id %}';
+        var songId = that.attr('id').substring(0, that.attr('id').length - 3);
+        var action = 'add';
+        if(that.hasClass('success')) action = 'remove';
+        $.getJSON(url,
+                  {'song_id':songId, 'action':action},
+                  function(data){
+                      if(data.result == 'added'){
+                          if(data.song_id != null){
+                              $("#" + data.song_id + "-id").addClass('success');
+                              $("#" + data.song_id + "-id").find('td').first().html('<i class="icon-ok"></i>')
+                          }
+                      }
+                      else if(data.result == 'removed'){
+                          $("#" + data.song_id + "-id").removeClass('success');
+                          $("#" + data.song_id + "-id").find('td').first().html('')
+                      }
+
+                  }
+        );
+    });
+});
+
+</script>
+
+
+{% endblock %}

@@ -1,0 +1,99 @@
+{% extends 'dj/base.html' %}
+{% load ttags %}
+
+{% block page_title %}Web Jukebox - Event Requests{% endblock %}
+{% block style %}
+<style>
+#event-request-table_wrapper {
+    margin-top: -35px;
+}
+</style>
+{% endblock %}
+
+{% block event-content %}
+<div class="page-header">
+    <h2>Requests</h2>
+</div>
+<table class="table table-bordered table-striped table-hover" id="event-request-table" style="margin-top:5px;">
+    <thead class="header">
+        <tr>
+            <th>Title</th>
+            <th>Artist</th>
+            <th># Requests</th>
+            <th>Last Requested</th>
+            <th width="76px">Actions</th>
+        </tr>
+    </thead>
+
+    <tbody>
+    {% for request in requested_songs %}
+        <tr id="{{ request.id }}-row">
+            <td>{{ request.song.title }}</td>
+            <td>{{ request.song.artist }}</td>
+            <td>{{ request.count }}</td>
+            <td>{{ request.last_requested }}</td>
+            <td>
+                <div class="btn-group">
+                    <a id="{{ request.id }}-play" class="btn btn-inverse request-action request-action-play" rel="tooltip" title="Play"><i class="icon-play"></i></a>
+                    <a id="{{ request.id }}-nope" class="btn btn-danger request-action request-action-eject" rel="tooltip" title="Don't Show Again"><i class="icon-eject"></i></a>
+                </div>
+            </td>
+        </tr>
+    {% endfor %}
+    </tbody>
+</table>
+<script type="text/javascript">
+$(document).ready(function(){
+    $('#event-request-table').dataTable( {
+       "sDom": "<'datatable-head'<'datatable-filter'f>>t<'datatable-foot'<'datatable-length'l><'datatable-pagination'pi>>",
+       "bFilter": true ,
+       "bPaginate": true,
+       "bInfo": true,
+       "bStateSave":true,
+       "sPaginationType": "bootstrap",
+       "oLanguage": {
+           "sInfo": "Showing _START_ to _END_ of _TOTAL_ requests",
+           "sLengthMenu": "Show _MENU_ requests",
+           "sInfoEmpty": "Showing 0 requests",
+           "sInfoFiltered": "(filtered from _MAX_ total requests)"
+       },
+       "fnDrawCallback": function() {
+           var pageCount = Math.ceil((this.fnSettings().fnRecordsDisplay()) / this.fnSettings()._iDisplayLength);
+           var recordCount = this.fnSettings().fnRecordsDisplay();
+           if(recordCount > 10){
+               $('.dataTables_length').css("display", "block");
+           }
+           else{
+               $('.dataTables_length').css("display", "none");
+           }
+           if (pageCount > 1)  {
+               $('.dataTables_paginate').css("display", "block");
+
+           } else {
+               $('.dataTables_paginate').css("display", "none");
+           }
+       }
+    });
+    $(".request-action").live('click', function(){
+        var that = $(this);
+        var url = '{% url dj-event-request-status event.id %}';
+        var requestId = that.attr('id').substring(0, that.attr('id').length - 5);
+        var action = that.attr('id').substring(that.attr('id').length - 4, that.attr('id').length);
+        $.getJSON(url,
+                  {'request_id':requestId, 'action':action},
+                  function(data){
+                      if(data.result == 'success'){
+                          $("#" + data.request_id + "-row").hide("normal", function(){$(this).remove();});
+                      }
+                  }
+        );
+    });
+    $('.request-action-play').tooltip({
+        "placement":"left"
+    });
+    $('.request-action-eject').tooltip({
+        "placement":"right"
+    });
+});
+</script>
+{% endblock %}
