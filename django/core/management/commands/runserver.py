@@ -1,12 +1,13 @@
 from optparse import make_option
+from datetime import datetime
+import errno
 import os
 import re
 import sys
 import socket
 
 from django.core.management.base import BaseCommand, CommandError
-from django.core.handlers.wsgi import WSGIHandler
-from django.core.servers.basehttp import AdminMediaHandler, run, WSGIServerException
+from django.core.servers.basehttp import run, get_internal_wsgi_application
 from django.utils import autoreload
 
 naiveip_re = re.compile(r"""^(?:
@@ -17,10 +18,13 @@ naiveip_re = re.compile(r"""^(?:
 ):)?(?P<port>\d+)$""", re.X)
 DEFAULT_PORT = "8000"
 
-class BaseRunserverCommand(BaseCommand):
+
+class Command(BaseCommand):
     option_list = BaseCommand.option_list + (
         make_option('--ipv6', '-6', action='store_true', dest='use_ipv6', default=False,
             help='Tells Django to use a IPv6 address.'),
+        make_option('--nothreading', action='store_false', dest='use_threading', default=True,
+            help='Tells Django to NOT use threading.'),
         make_option('--noreload', action='store_false', dest='use_reloader', default=True,
             help='Tells Django to NOT use the auto-reloader.'),
     )
@@ -34,7 +38,7 @@ class BaseRunserverCommand(BaseCommand):
         """
         Returns the default WSGI handler for the runner.
         """
-        return WSGIHandler()
+        return get_internal_wsgi_application()
 
     def handle(self, addrport='', *args, **options):
         self.use_ipv6 = options.get('use_ipv6')
@@ -70,7 +74,7 @@ class BaseRunserverCommand(BaseCommand):
         """
         Runs the server, using the autoreloader if needed
         """
-        use_reloader = options.get('use_reloader', True)
+        use_reloader = options.get('use_reloader')
 
         if use_reloader:
             autoreload.main(self.inner_run, args, options)
@@ -81,16 +85,19 @@ class BaseRunserverCommand(BaseCommand):
         from django.conf import settings
         from django.utils import translation
 
+        threading = options.get('use_threading')
         shutdown_message = options.get('shutdown_message', '')
         quit_command = (sys.platform == 'win32') and 'CTRL-BREAK' or 'CONTROL-C'
 
         self.stdout.write("Validating models...\n\n")
         self.validate(display_num_errors=True)
         self.stdout.write((
+            "%(started_at)s\n"
             "Django version %(version)s, using settings %(settings)r\n"
             "Development server is running at http://%(addr)s:%(port)s/\n"
             "Quit the server with %(quit_command)s.\n"
         ) % {
+            "started_at": datetime.now().strftime('%B %d, %Y - %X'),
             "version": self.get_version(),
             "settings": settings.SETTINGS_MODULE,
             "addr": self._raw_ipv6 and '[%s]' % self.addr or self.addr,
@@ -104,35 +111,27 @@ class BaseRunserverCommand(BaseCommand):
 
         try:
             handler = self.get_handler(*args, **options)
-            run(self.addr, int(self.port), handler, ipv6=self.use_ipv6)
-        except WSGIServerException, e:
+            run(self.addr, int(self.port), handler,
+                ipv6=self.use_ipv6, threading=threading)
+        except socket.error as e:
             # Use helpful error messages instead of ugly tracebacks.
             ERRORS = {
-                13: "You don't have permission to access that port.",
-                98: "That port is already in use.",
-                99: "That IP address can't be assigned-to.",
+                errno.EACCES: "You don't have permission to access that port.",
+                errno.EADDRINUSE: "That port is already in use.",
+                errno.EADDRNOTAVAIL: "That IP address can't be assigned-to.",
             }
             try:
-                error_text = ERRORS[e.args[0].args[0]]
-            except (AttributeError, KeyError):
+                error_text = ERRORS[e.errno]
+            except KeyError:
                 error_text = str(e)
-            sys.stderr.write(self.style.ERROR("Error: %s" % error_text) + '\n')
+            self.stderr.write("Error: %s" % error_text)
             # Need to use an OS exit because sys.exit doesn't work in a thread
             os._exit(1)
         except KeyboardInterrupt:
             if shutdown_message:
-                self.stdout.write("%s\n" % shutdown_message)
+                self.stdout.write(shutdown_message)
             sys.exit(0)
 
-class Command(BaseRunserverCommand):
-    option_list = BaseRunserverCommand.option_list + (
-        make_option('--adminmedia', dest='admin_media_path', default='',
-            help='Specifies the directory from which to serve admin media.'),
-    )
 
-    def get_handler(self, *args, **options):
-        """
-        Serves admin media like old-school (deprecation pending).
-        """
-        handler = super(Command, self).get_handler(*args, **options)
-        return AdminMediaHandler(handler, options.get('admin_media_path', ''))
+# Kept for backward compatibility
+BaseRunserverCommand = Command

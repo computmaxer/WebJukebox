@@ -1,7 +1,12 @@
-import urllib
-from urlparse import urlparse
+try:
+    from urllib.parse import urlparse
+    from urllib.request import url2pathname
+except ImportError:     # Python 2
+    from urllib import url2pathname
+    from urlparse import urlparse
 
 from django.conf import settings
+from django.core.handlers.base import get_path_info
 from django.core.handlers.wsgi import WSGIHandler
 
 from django.contrib.staticfiles import utils
@@ -35,15 +40,14 @@ class StaticFilesHandler(WSGIHandler):
         * the host is provided as part of the base_url
         * the request's path isn't under the media path (or equal)
         """
-        return (self.base_url[2] != path and
-            path.startswith(self.base_url[2]) and not self.base_url[1])
+        return path.startswith(self.base_url[2]) and not self.base_url[1]
 
     def file_path(self, url):
         """
         Returns the relative path to the media file on disk for the given URL.
         """
         relative_url = url[len(self.base_url[2]):]
-        return urllib.url2pathname(relative_url)
+        return url2pathname(relative_url)
 
     def serve(self, request):
         """
@@ -57,13 +61,13 @@ class StaticFilesHandler(WSGIHandler):
         if self._should_handle(request.path):
             try:
                 return self.serve(request)
-            except Http404, e:
+            except Http404 as e:
                 if settings.DEBUG:
                     from django.views import debug
                     return debug.technical_404_response(request, e)
         return super(StaticFilesHandler, self).get_response(request)
 
     def __call__(self, environ, start_response):
-        if not self._should_handle(environ['PATH_INFO']):
+        if not self._should_handle(get_path_info(environ)):
             return self.application(environ, start_response)
         return super(StaticFilesHandler, self).__call__(environ, start_response)

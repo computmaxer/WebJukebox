@@ -4,12 +4,14 @@ import time
 from threading import local
 
 from django.core.cache.backends.base import BaseCache, InvalidCacheBackendError
-from django.utils import importlib
+
+from django.utils import six
+from django.utils.encoding import force_str
 
 class BaseMemcachedCache(BaseCache):
     def __init__(self, server, params, library, value_not_found_exception):
         super(BaseMemcachedCache, self).__init__(params)
-        if isinstance(server, basestring):
+        if isinstance(server, six.string_types):
             self._servers = server.split(';')
         else:
             self._servers = server
@@ -47,7 +49,11 @@ class BaseMemcachedCache(BaseCache):
             #
             # This means that we have to switch to absolute timestamps.
             timeout += int(time.time())
-        return timeout
+        return int(timeout)
+
+    def make_key(self, key, version=None):
+        # Python 2 memcache requires the key to be a byte string.
+        return force_str(super(BaseMemcachedCache, self).make_key(key, version))
 
     def add(self, key, value, timeout=0, version=None):
         key = self.make_key(key, version=version)
@@ -69,7 +75,7 @@ class BaseMemcachedCache(BaseCache):
         self._cache.delete(key)
 
     def get_many(self, keys, version=None):
-        new_keys = map(lambda x: self.make_key(x, version=version), keys)
+        new_keys = [self.make_key(x, version=version) for x in keys]
         ret = self._cache.get_multi(new_keys)
         if ret:
             _ = {}
@@ -84,6 +90,9 @@ class BaseMemcachedCache(BaseCache):
 
     def incr(self, key, delta=1, version=None):
         key = self.make_key(key, version=version)
+        # memcached doesn't support a negative delta
+        if delta < 0:
+            return self._cache.decr(key, -delta)
         try:
             val = self._cache.incr(key, delta)
 
@@ -99,6 +108,9 @@ class BaseMemcachedCache(BaseCache):
 
     def decr(self, key, delta=1, version=None):
         key = self.make_key(key, version=version)
+        # memcached doesn't support a negative delta
+        if delta < 0:
+            return self._cache.incr(key, -delta)
         try:
             val = self._cache.decr(key, delta)
 
@@ -126,24 +138,19 @@ class BaseMemcachedCache(BaseCache):
     def clear(self):
         self._cache.flush_all()
 
-# For backwards compatibility -- the default cache class tries a
-# cascading lookup of cmemcache, then memcache.
 class CacheClass(BaseMemcachedCache):
     def __init__(self, server, params):
+        import warnings
+        warnings.warn(
+            "memcached.CacheClass has been split into memcached.MemcachedCache and memcached.PyLibMCCache. Please update your cache backend setting.",
+            DeprecationWarning
+        )
         try:
-            import cmemcache as memcache
-            import warnings
-            warnings.warn(
-                "Support for the 'cmemcache' library has been deprecated. Please use python-memcached or pyblimc instead.",
-                DeprecationWarning
-            )
+            import memcache
         except ImportError:
-            try:
-                import memcache
-            except:
-                raise InvalidCacheBackendError(
-                    "Memcached cache backend requires either the 'memcache' or 'cmemcache' library"
-                    )
+            raise InvalidCacheBackendError(
+                "Memcached cache backend requires either the 'memcache' or 'cmemcache' library"
+                )
         super(CacheClass, self).__init__(server, params,
                                          library=memcache,
                                          value_not_found_exception=ValueError)

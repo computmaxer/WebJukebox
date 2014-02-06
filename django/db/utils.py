@@ -1,9 +1,12 @@
-import inspect
 import os
+import pkgutil
+from threading import local
 
 from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.utils.importlib import import_module
+from django.utils._os import upath
+from django.utils import six
 
 
 DEFAULT_DB_ALIAS = 'default'
@@ -19,38 +22,30 @@ class IntegrityError(DatabaseError):
 
 
 def load_backend(backend_name):
+    # Look for a fully qualified database backend name
     try:
-        module = import_module('.base', 'django.db.backends.%s' % backend_name)
-        import warnings
-        warnings.warn(
-            "Short names for DATABASE_ENGINE are deprecated; prepend with 'django.db.backends.'",
-            DeprecationWarning
-        )
-        return module
-    except ImportError, e:
-        # Look for a fully qualified database backend name
+        return import_module('.base', backend_name)
+    except ImportError as e_user:
+        # The database backend wasn't found. Display a helpful error message
+        # listing all possible (built-in) database backends.
+        backend_dir = os.path.join(os.path.dirname(upath(__file__)), 'backends')
         try:
-            return import_module('.base', backend_name)
-        except ImportError, e_user:
-            # The database backend wasn't found. Display a helpful error message
-            # listing all possible (built-in) database backends.
-            backend_dir = os.path.join(os.path.dirname(__file__), 'backends')
-            try:
-                available_backends = [f for f in os.listdir(backend_dir)
-                        if os.path.isdir(os.path.join(backend_dir, f))
-                        and not f.startswith('.')]
-            except EnvironmentError:
-                available_backends = []
-            if backend_name.startswith('django.db.backends.'):
-                backend_name = backend_name[19:] # See #15621.
-            if backend_name not in available_backends:
-                error_msg = ("%r isn't an available database backend. \n" +
-                    "Try using django.db.backends.XXX, where XXX is one of:\n    %s\n" +
-                    "Error was: %s") % \
-                    (backend_name, ", ".join(map(repr, sorted(available_backends))), e_user)
-                raise ImproperlyConfigured(error_msg)
-            else:
-                raise # If there's some other error, this must be an error in Django itself.
+            builtin_backends = [
+                name for _, name, ispkg in pkgutil.iter_modules([backend_dir])
+                if ispkg and name != 'dummy']
+        except EnvironmentError:
+            builtin_backends = []
+        if backend_name not in ['django.db.backends.%s' % b for b in
+                                builtin_backends]:
+            backend_reprs = map(repr, sorted(builtin_backends))
+            error_msg = ("%r isn't an available database backend.\n"
+                         "Try using 'django.db.backends.XXX', where XXX "
+                         "is one of:\n    %s\nError was: %s" %
+                         (backend_name, ", ".join(backend_reprs), e_user))
+            raise ImproperlyConfigured(error_msg)
+        else:
+            # If there's some other error, this must be an error in Django
+            raise
 
 
 class ConnectionDoesNotExist(Exception):
@@ -59,8 +54,15 @@ class ConnectionDoesNotExist(Exception):
 
 class ConnectionHandler(object):
     def __init__(self, databases):
-        self.databases = databases
-        self._connections = {}
+        if not databases:
+            self.databases = {
+                DEFAULT_DB_ALIAS: {
+                    'ENGINE': 'django.db.backends.dummy',
+                },
+            }
+        else:
+            self.databases = databases
+        self._connections = local()
 
     def ensure_defaults(self, alias):
         """
@@ -76,24 +78,25 @@ class ConnectionHandler(object):
         if conn['ENGINE'] == 'django.db.backends.' or not conn['ENGINE']:
             conn['ENGINE'] = 'django.db.backends.dummy'
         conn.setdefault('OPTIONS', {})
-        conn.setdefault('TEST_CHARSET', None)
-        conn.setdefault('TEST_COLLATION', None)
-        conn.setdefault('TEST_NAME', None)
-        conn.setdefault('TEST_MIRROR', None)
-        conn.setdefault('TIME_ZONE', settings.TIME_ZONE)
-        for setting in ('NAME', 'USER', 'PASSWORD', 'HOST', 'PORT'):
+        conn.setdefault('TIME_ZONE', 'UTC' if settings.USE_TZ else settings.TIME_ZONE)
+        for setting in ['NAME', 'USER', 'PASSWORD', 'HOST', 'PORT']:
             conn.setdefault(setting, '')
+        for setting in ['TEST_CHARSET', 'TEST_COLLATION', 'TEST_NAME', 'TEST_MIRROR']:
+            conn.setdefault(setting, None)
 
     def __getitem__(self, alias):
-        if alias in self._connections:
-            return self._connections[alias]
+        if hasattr(self._connections, alias):
+            return getattr(self._connections, alias)
 
         self.ensure_defaults(alias)
         db = self.databases[alias]
         backend = load_backend(db['ENGINE'])
         conn = backend.DatabaseWrapper(db, alias)
-        self._connections[alias] = conn
+        setattr(self._connections, alias, conn)
         return conn
+
+    def __setitem__(self, key, value):
+        setattr(self._connections, key, value)
 
     def __iter__(self):
         return iter(self.databases)
@@ -106,11 +109,11 @@ class ConnectionRouter(object):
     def __init__(self, routers):
         self.routers = []
         for r in routers:
-            if isinstance(r, basestring):
+            if isinstance(r, six.string_types):
                 try:
                     module_name, klass_name = r.rsplit('.', 1)
                     module = import_module(module_name)
-                except ImportError, e:
+                except ImportError as e:
                     raise ImproperlyConfigured('Error importing database router %s: "%s"' % (klass_name, e))
                 try:
                     router_class = getattr(module, klass_name)

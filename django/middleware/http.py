@@ -1,4 +1,3 @@
-from django.core.exceptions import MiddlewareNotUsed
 from django.utils.http import http_date, parse_http_date_safe
 
 class ConditionalGetMiddleware(object):
@@ -11,7 +10,7 @@ class ConditionalGetMiddleware(object):
     """
     def process_response(self, request, response):
         response['Date'] = http_date()
-        if not response.has_header('Content-Length'):
+        if not response.streaming and not response.has_header('Content-Length'):
             response['Content-Length'] = str(len(response.content))
 
         if response.has_header('ETag'):

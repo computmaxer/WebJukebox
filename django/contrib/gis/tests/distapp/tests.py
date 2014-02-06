@@ -1,15 +1,15 @@
-import os
-from decimal import Decimal
+from __future__ import absolute_import
 
 from django.db import connection
 from django.db.models import Q
-from django.contrib.gis.geos import GEOSGeometry, Point, LineString
+from django.contrib.gis.geos import GEOSGeometry, LineString
 from django.contrib.gis.measure import D # alias for Distance
 from django.contrib.gis.tests.utils import oracle, postgis, spatialite, no_oracle, no_spatialite
 from django.test import TestCase
 
-from models import AustraliaCity, Interstate, SouthTexasInterstate, \
-    SouthTexasCity, SouthTexasCityFt, CensusZipcode, SouthTexasZipcode
+from .models import (AustraliaCity, Interstate, SouthTexasInterstate,
+    SouthTexasCity, SouthTexasCityFt, CensusZipcode, SouthTexasZipcode)
+
 
 class DistanceTest(TestCase):
 
@@ -324,7 +324,7 @@ class DistanceTest(TestCase):
         else:
             qs = Interstate.objects.length()
             if oracle: tol = 2
-            else: tol = 5
+            else: tol = 3
             self.assertAlmostEqual(len_m1, qs[0].length.m, tol)
 
         # Now doing length on a projected coordinate system.

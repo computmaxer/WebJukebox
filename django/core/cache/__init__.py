@@ -14,24 +14,17 @@ cache class.
 
 See docs/topics/cache.txt for information on the public API.
 """
+try:
+    from urllib.parse import parse_qsl
+except ImportError:     # Python 2
+    from urlparse import parse_qsl
+
 from django.conf import settings
 from django.core import signals
 from django.core.cache.backends.base import (
     InvalidCacheBackendError, CacheKeyWarning, BaseCache)
 from django.core.exceptions import ImproperlyConfigured
 from django.utils import importlib
-
-try:
-    # The mod_python version is more efficient, so try importing it first.
-    from mod_python.util import parse_qsl
-except ImportError:
-    try:
-        # Python 2.6 and greater
-        from urlparse import parse_qsl
-    except ImportError:
-        # Python 2.5, 2.4.  Works on Python 2.6 but raises
-        # PendingDeprecationWarning
-        from cgi import parse_qsl
 
 __all__ = [
     'get_cache', 'cache', 'DEFAULT_CACHE_ALIAS'
@@ -74,42 +67,6 @@ def parse_backend_uri(backend_uri):
 
     return scheme, host, params
 
-if not settings.CACHES:
-    legacy_backend = getattr(settings, 'CACHE_BACKEND', None)
-    if legacy_backend:
-        import warnings
-        warnings.warn(
-            "settings.CACHE_* is deprecated; use settings.CACHES instead.",
-            PendingDeprecationWarning
-        )
-    else:
-        # The default cache setting is put here so that we
-        # can differentiate between a user who has provided
-        # an explicit CACHE_BACKEND of locmem://, and the
-        # default value. When the deprecation cycle has completed,
-        # the default can be restored to global_settings.py
-        settings.CACHE_BACKEND = 'locmem://'
-
-    # Mapping for new-style cache backend api
-    backend_classes = {
-        'memcached': 'memcached.CacheClass',
-        'locmem': 'locmem.LocMemCache',
-        'file': 'filebased.FileBasedCache',
-        'db': 'db.DatabaseCache',
-        'dummy': 'dummy.DummyCache',
-    }
-    engine, host, params = parse_backend_uri(settings.CACHE_BACKEND)
-    if engine in backend_classes:
-        engine = 'django.core.cache.backends.%s' % backend_classes[engine]
-    else:
-        engine = '%s.CacheClass' % engine
-    defaults = {
-        'BACKEND': engine,
-        'LOCATION': host,
-    }
-    defaults.update(params)
-    settings.CACHES[DEFAULT_CACHE_ALIAS] = defaults
-
 if DEFAULT_CACHE_ALIAS not in settings.CACHES:
     raise ImproperlyConfigured("You must define a '%s' cache" % DEFAULT_CACHE_ALIAS)
 
@@ -127,17 +84,15 @@ def parse_backend_conf(backend, **kwargs):
         location = args.pop('LOCATION', '')
         return backend, location, args
     else:
-        # Trying to import the given backend, in case it's a dotted path
-        mod_path, cls_name = backend.rsplit('.', 1)
         try:
+            # Trying to import the given backend, in case it's a dotted path
+            mod_path, cls_name = backend.rsplit('.', 1)
             mod = importlib.import_module(mod_path)
             backend_cls = getattr(mod, cls_name)
-        except (AttributeError, ImportError):
+        except (AttributeError, ImportError, ValueError):
             raise InvalidCacheBackendError("Could not find backend '%s'" % backend)
         location = kwargs.pop('LOCATION', '')
         return backend, location, kwargs
-    raise InvalidCacheBackendError(
-        "Couldn't find a cache backend named '%s'" % backend)
 
 def get_cache(backend, **kwargs):
     """
@@ -174,15 +129,16 @@ def get_cache(backend, **kwargs):
             mod_path, cls_name = backend.rsplit('.', 1)
             mod = importlib.import_module(mod_path)
             backend_cls = getattr(mod, cls_name)
-    except (AttributeError, ImportError), e:
+    except (AttributeError, ImportError) as e:
         raise InvalidCacheBackendError(
             "Could not find backend '%s': %s" % (backend, e))
-    return backend_cls(location, params)
+    cache = backend_cls(location, params)
+    # Some caches -- python-memcached in particular -- need to do a cleanup at the
+    # end of a request cycle. If the cache provides a close() method, wire it up
+    # here.
+    if hasattr(cache, 'close'):
+        signals.request_finished.connect(cache.close)
+    return cache
 
 cache = get_cache(DEFAULT_CACHE_ALIAS)
 
-# Some caches -- python-memcached in particular -- need to do a cleanup at the
-# end of a request cycle. If the cache provides a close() method, wire it up
-# here.
-if hasattr(cache, 'close'):
-    signals.request_finished.connect(cache.close)

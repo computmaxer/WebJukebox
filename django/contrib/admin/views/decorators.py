@@ -1,18 +1,16 @@
-try:
-    from functools import wraps
-except ImportError:
-    from django.utils.functional import wraps  # Python 2.4 fallback.
-
+from functools import wraps
 from django.utils.translation import ugettext as _
 from django.contrib.admin.forms import AdminAuthenticationForm
 from django.contrib.auth.views import login
 from django.contrib.auth import REDIRECT_FIELD_NAME
+
 
 def staff_member_required(view_func):
     """
     Decorator for views that checks that the user is logged in and is a staff
     member, displaying the login page if necessary.
     """
+    @wraps(view_func)
     def _checklogin(request, *args, **kwargs):
         if request.user.is_active and request.user.is_staff:
             # The user is valid. Continue to the admin page.
@@ -29,4 +27,4 @@ def staff_member_required(view_func):
             },
         }
         return login(request, **defaults)
-    return wraps(view_func)(_checklogin)
+    return _checklogin

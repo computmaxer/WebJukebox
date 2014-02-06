@@ -1,6 +1,21 @@
 from django.conf import settings
 from django.utils.importlib import import_module
 
+
+def merge_dicts(d1, d2):
+    '''Update dictionary recursively. If values for a given key exist in both dictionaries and are dict-like they are merged.'''
+
+    for k, v in d2.iteritems():
+
+        # Try to merge the values as if they were dicts.
+        try:
+            merge_dicts(d1[k], v)
+
+        # Otherwise just overwrite the original value (if any).
+        except (AttributeError, KeyError):
+            d1[k] = v
+
+
 class DatabaseOperations(object):
     dbindexer_compiler_module = __name__.rsplit('.', 1)[0] + '.compiler'
 
@@ -26,10 +41,16 @@ class BaseDatabaseWrapper(object):
         self.ops.__init__()
 
 def DatabaseWrapper(settings_dict, *args, **kwargs):
-    target_settings = settings.DATABASES[settings_dict['TARGET']]
+    target_settings = settings_dict['TARGET']
+    if isinstance(target_settings, (str, unicode)):
+        target_settings = settings.DATABASES[target_settings]
     engine = target_settings['ENGINE'] + '.base'
     target = import_module(engine).DatabaseWrapper
     class Wrapper(BaseDatabaseWrapper, target):
         pass
-    settings_dict.update(target_settings)
-    return Wrapper(settings_dict, *args, **kwargs)
+
+    # Update settings with target database settings (which can contain nested dicts).
+    merged_settings = settings_dict.copy()
+    merge_dicts(merged_settings, target_settings)
+
+    return Wrapper(merged_settings, *args, **kwargs)

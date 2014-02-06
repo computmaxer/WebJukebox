@@ -1,21 +1,25 @@
 """
 Internationalization support.
 """
-import warnings
-from os import path
+from __future__ import unicode_literals
 
-from django.utils.encoding import force_unicode
+from django.utils.encoding import force_text
 from django.utils.functional import lazy
-from django.utils.importlib import import_module
+from django.utils import six
 
 
-__all__ = ['gettext', 'gettext_noop', 'gettext_lazy', 'ngettext',
-        'ngettext_lazy', 'string_concat', 'activate', 'deactivate',
-        'get_language', 'get_language_bidi', 'get_date_formats',
-        'get_partial_date_formats', 'check_for_language', 'to_locale',
-        'get_language_from_request', 'templatize', 'ugettext', 'ugettext_lazy',
-        'ungettext', 'ungettext_lazy', 'pgettext', 'pgettext_lazy',
-        'npgettext', 'npgettext_lazy', 'deactivate_all', 'get_language_info']
+__all__ = [
+    'activate', 'deactivate', 'override', 'deactivate_all',
+    'get_language',  'get_language_from_request',
+    'get_language_info', 'get_language_bidi',
+    'check_for_language', 'to_locale', 'templatize', 'string_concat',
+    'gettext', 'gettext_lazy', 'gettext_noop',
+    'ugettext', 'ugettext_lazy', 'ugettext_noop',
+    'ngettext', 'ngettext_lazy',
+    'ungettext', 'ungettext_lazy',
+    'pgettext', 'pgettext_lazy',
+    'npgettext', 'npgettext_lazy',
+]
 
 # Here be dragons, so a short explanation of the logic won't hurt:
 # We are trying to solve two problems: (1) access settings, in particular
@@ -42,20 +46,6 @@ class Trans(object):
         from django.conf import settings
         if settings.USE_I18N:
             from django.utils.translation import trans_real as trans
-            # Make sure the project's locale dir isn't in LOCALE_PATHS
-            if settings.SETTINGS_MODULE is not None:
-                parts = settings.SETTINGS_MODULE.split('.')
-                project = import_module(parts[0])
-                project_locale_path = path.normpath(
-                    path.join(path.dirname(project.__file__), 'locale'))
-                normalized_locale_paths = [path.normpath(locale_path)
-                    for locale_path in settings.LOCALE_PATHS]
-                if (path.isdir(project_locale_path) and
-                        not project_locale_path in normalized_locale_paths):
-                    warnings.warn("Translations in the project directory "
-                                  "aren't supported anymore. Use the "
-                                  "LOCALE_PATHS setting instead.",
-                                  PendingDeprecationWarning)
         else:
             from django.utils.translation import trans_null as trans
         setattr(self, real_name, getattr(trans, real_name))
@@ -89,12 +79,12 @@ def pgettext(context, message):
 def npgettext(context, singular, plural, number):
     return _trans.npgettext(context, singular, plural, number)
 
-ngettext_lazy = lazy(ngettext, str)
 gettext_lazy = lazy(gettext, str)
-ungettext_lazy = lazy(ungettext, unicode)
-ugettext_lazy = lazy(ugettext, unicode)
-pgettext_lazy = lazy(pgettext, unicode)
-npgettext_lazy = lazy(npgettext, unicode)
+ngettext_lazy = lazy(ngettext, str)
+ugettext_lazy = lazy(ugettext, six.text_type)
+ungettext_lazy = lazy(ungettext, six.text_type)
+pgettext_lazy = lazy(pgettext, six.text_type)
+npgettext_lazy = lazy(npgettext, six.text_type)
 
 def activate(language):
     return _trans.activate(language)
@@ -102,17 +92,29 @@ def activate(language):
 def deactivate():
     return _trans.deactivate()
 
+class override(object):
+    def __init__(self, language, deactivate=False):
+        self.language = language
+        self.deactivate = deactivate
+        self.old_language = get_language()
+
+    def __enter__(self):
+        if self.language is not None:
+            activate(self.language)
+        else:
+            deactivate_all()
+
+    def __exit__(self, exc_type, exc_value, traceback):
+        if self.deactivate:
+            deactivate()
+        else:
+            activate(self.old_language)
+
 def get_language():
     return _trans.get_language()
 
 def get_language_bidi():
     return _trans.get_language_bidi()
-
-def get_date_formats():
-    return _trans.get_date_formats()
-
-def get_partial_date_formats():
-    return _trans.get_partial_date_formats()
 
 def check_for_language(lang_code):
     return _trans.check_for_language(lang_code)
@@ -120,8 +122,11 @@ def check_for_language(lang_code):
 def to_locale(language):
     return _trans.to_locale(language)
 
-def get_language_from_request(request):
-    return _trans.get_language_from_request(request)
+def get_language_from_request(request, check_path=False):
+    return _trans.get_language_from_request(request, check_path)
+
+def get_language_from_path(path):
+    return _trans.get_language_from_path(path)
 
 def templatize(src, origin=None):
     return _trans.templatize(src, origin)
@@ -134,8 +139,8 @@ def _string_concat(*strings):
     Lazy variant of string concatenation, needed for translations that are
     constructed from multiple parts.
     """
-    return u''.join([force_unicode(s) for s in strings])
-string_concat = lazy(_string_concat, unicode)
+    return ''.join([force_text(s) for s in strings])
+string_concat = lazy(_string_concat, six.text_type)
 
 def get_language_info(lang_code):
     from django.conf.locale import LANG_INFO

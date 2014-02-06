@@ -11,7 +11,7 @@ Constraint.__repr__ = __repr__
 # TODO: manipulate a copy of the query instead of the query itself. This has to
 # be done because the query can be reused afterwards by the user so that a
 # manipulated query can result in strange behavior for these cases!
-#TODO: Add watching layer which gives suggestions for indexes via query inspection
+# TODO: Add watching layer which gives suggestions for indexes via query inspection
 # at runtime
 
 class BaseCompiler(object):
@@ -31,7 +31,6 @@ class SQLCompiler(BaseCompiler):
         self.convert_filters()
         return super(SQLCompiler, self).has_results()
 
-
 class SQLInsertCompiler(BaseCompiler):
     def execute_sql(self, return_id=False):
         resolver.convert_insert_query(self.query)
@@ -41,4 +40,13 @@ class SQLUpdateCompiler(BaseCompiler):
     pass
 
 class SQLDeleteCompiler(BaseCompiler):
+    pass
+
+class SQLDateCompiler(BaseCompiler):
+    pass
+
+class SQLDateTimeCompiler(BaseCompiler):
+    pass
+
+class SQLAggregateCompiler(BaseCompiler):
     pass

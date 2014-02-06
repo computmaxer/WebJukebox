@@ -3,9 +3,10 @@ from django.conf import settings
 from django.core.exceptions import ImproperlyConfigured
 from django.core.files.storage import default_storage, Storage, FileSystemStorage
 from django.utils.datastructures import SortedDict
-from django.utils.functional import memoize, LazyObject
+from django.utils.functional import empty, memoize, LazyObject
 from django.utils.importlib import import_module
 from django.utils._os import safe_join
+from django.utils import six
 
 from django.contrib.staticfiles import utils
 from django.contrib.staticfiles.storage import AppStaticStorage
@@ -28,7 +29,7 @@ class BaseFinder(object):
         """
         raise NotImplementedError()
 
-    def list(self, ignore_patterns=[]):
+    def list(self, ignore_patterns):
         """
         Given an optional list of paths to ignore, this should return
         a two item iterable consisting of the relative path and storage
@@ -132,8 +133,8 @@ class AppDirectoriesFinder(BaseFinder):
         """
         List all files in all app storages.
         """
-        for storage in self.storages.itervalues():
-            if storage.exists(''): # check if storage location exists
+        for storage in six.itervalues(self.storages):
+            if storage.exists(''):  # check if storage location exists
                 for path in utils.get_files(storage, ignore_patterns):
                     yield path, storage
 
@@ -210,11 +211,20 @@ class BaseStorageFinder(BaseFinder):
         for path in utils.get_files(self.storage, ignore_patterns):
             yield path, self.storage
 
+
 class DefaultStorageFinder(BaseStorageFinder):
     """
     A static files finder that uses the default storage backend.
     """
     storage = default_storage
+
+    def __init__(self, *args, **kwargs):
+        super(DefaultStorageFinder, self).__init__(*args, **kwargs)
+        base_location = getattr(self.storage, 'base_location', empty)
+        if not base_location:
+            raise ImproperlyConfigured("The storage backend of the "
+                                       "staticfiles finder %r doesn't have "
+                                       "a valid location." % self.__class__)
 
 
 def find(path, all=False):
@@ -237,9 +247,11 @@ def find(path, all=False):
     # No match.
     return all and [] or None
 
+
 def get_finders():
     for finder_path in settings.STATICFILES_FINDERS:
         yield get_finder(finder_path)
+
 
 def _get_finder(import_path):
     """
@@ -249,7 +261,7 @@ def _get_finder(import_path):
     module, attr = import_path.rsplit('.', 1)
     try:
         mod = import_module(module)
-    except ImportError, e:
+    except ImportError as e:
         raise ImproperlyConfigured('Error importing module %s: "%s"' %
                                    (module, e))
     try:
