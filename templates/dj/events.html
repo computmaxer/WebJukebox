@@ -22,7 +22,7 @@
 
             <tbody>
             {% for event in user_events %}
-                <tr onClick="javascript:document.location='{% url dj-event-requests event.id %}'" class="link-row">
+                <tr onClick="javascript:document.location='{% url "dj-event-requests" event.id %}'" class="link-row">
                     <td>{{ event.name }}</td>
                     <td>{{ event.date_time }}</td>
                     <td>{{ event.location }}</td>

@@ -44,7 +44,7 @@ body{
         <div class="well">
             <h1>Find an Event</h1>
             Are you a guest at an event using WebJukebox?  Then this is where you need to be!  Type in your zipcode to find events near you.
-            <form action="{% url find-event %}" method="POST">
+            <form action="{% url "find-event" %}" method="POST">
                 {% csrf_token %}
                 <div style="margin:auto 0;text-align: center;">
                     <label for="id_zipcode">
@@ -61,7 +61,7 @@ body{
         <div class="well">
             <h1>DJ an Event</h1>
             Are you a DJ looking for a song request handling system?  Then you are in the right place!  Click the button below to begin!
-            <div style="margin:10px auto;text-align: center;"><a class="btn btn-primary" href="{% url select-event %}?create=true">Create My Event</a></div>
+            <div style="margin:10px auto;text-align: center;"><a class="btn btn-primary" href="{% url "select-event" %}?create=true">Create My Event</a></div>
         </div>
     </div>
 </div>

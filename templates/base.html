@@ -31,8 +31,8 @@
                     <ul class="nav">
                         <li><a href="/">Home</a></li>
                         {% if user.is_authenticated %}
-                        <li><a href="{% url select-event %}">Events</a></li>
-                        <li><a href="{% url view-libraries %}">Libraries</a></li>
+                        <li><a href="{% url "select-event" %}">Events</a></li>
+                        <li><a href="{% url "view-libraries" %}">Libraries</a></li>
                         {% endif %}
                     </ul>
 
@@ -45,11 +45,11 @@
                             </a>
                             <ul class="dropdown-menu">
                                 <li>
-                                    <a href="{% url account-settings %}">Account Settings</a>
+                                    <a href="{% url "account-settings" %}">Account Settings</a>
                                 </li>
                                 <li class="divider"></li>
                                 <li>
-                                    <a href="{% url site-logout %}">Logout</a>
+                                    <a href="{% url "site-logout" %}">Logout</a>
                                 </li>
                             </ul>
                         </li>
@@ -57,8 +57,8 @@
 
                     {% else %}
                     <ul class="nav pull-right">
-                    	<li><a href="{% url account-registration %}">Register</a></li>
-                        <li><a href="{% url site-login %}">Login</a></li>
+                    	<li><a href="{% url "account-registration" %}">Register</a></li>
+                        <li><a href="{% url "site-login" %}">Login</a></li>
                     </ul>
                     {% endif %}
                 </div>

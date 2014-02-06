@@ -23,7 +23,7 @@
                     <tr>
                         <td>{{ library.name }}</td>
                         <td>
-                            <a href="{% url view-songs-in-library library.id %}">{{ library.song_count }} Songs</a>
+                            <a href="{% url "view-songs-in-library" library.id %}">{{ library.song_count }} Songs</a>
                         </td>
                         <td>
                             <div class="btn-group">

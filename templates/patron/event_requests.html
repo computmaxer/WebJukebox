@@ -98,7 +98,7 @@ $(document).ready(function(){
     });
     $('.song').live('click',function(){
         var that = $(this);
-        var url = '{% url patron-request-song event.id %}';
+        var url = '{% url "patron-request-song" event.id %}';
         var songId = that.attr('id').substring(0, that.attr('id').length - 3);
         var action = 'add';
         if(that.hasClass('success')) action = 'remove';

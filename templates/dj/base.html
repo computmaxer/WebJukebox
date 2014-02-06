@@ -12,10 +12,10 @@
         <div id="sidebar" class="span2">
             <div class="well">
                 <ul id="sidenav" class="nav nav-pills nav-stacked">
-                    <li {% ifequal active_pill 'requests' %}class="active"{% endifequal %}><a href="{% url dj-event-requests event.id %}">Requests</a></li>
-                    <li {% ifequal active_pill 'displays' %}class="active"{% endifequal %}><a href="{% url dj-event-displays event.id %}">Displays</a></li>
-                    <li {% ifequal active_pill 'statistics' %}class="active"{% endifequal %}><a href="{% url dj-event-statistics event.id %}">Statistics</a></li>
-                    <li {% ifequal active_pill 'setup' %}class="active"{% endifequal %}><a href="{% url dj-event-setup event.id %}">Settings</a></li>
+                    <li {% ifequal active_pill 'requests' %}class="active"{% endifequal %}><a href="{% url "dj-event-requests" event.id %}">Requests</a></li>
+                    <li {% ifequal active_pill 'displays' %}class="active"{% endifequal %}><a href="{% url "dj-event-displays" event.id %}">Displays</a></li>
+                    <li {% ifequal active_pill 'statistics' %}class="active"{% endifequal %}><a href="{% url "dj-event-statistics" event.id %}">Statistics</a></li>
+                    <li {% ifequal active_pill 'setup' %}class="active"{% endifequal %}><a href="{% url "dj-event-setup" event.id %}">Settings</a></li>
                 </ul>
             </div>
         </div>

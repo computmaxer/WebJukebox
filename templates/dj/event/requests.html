@@ -76,7 +76,7 @@ $(document).ready(function(){
     });
     $(".request-action").live('click', function(){
         var that = $(this);
-        var url = '{% url dj-event-request-status event.id %}';
+        var url = '{% url "dj-event-request-status" event.id %}';
         var requestId = that.attr('id').substring(0, that.attr('id').length - 5);
         var action = that.attr('id').substring(that.attr('id').length - 4, that.attr('id').length);
         $.getJSON(url,
